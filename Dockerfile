@@ -1,20 +1,30 @@
-FROM ubuntu:latest
+FROM ubuntu:22.04
+
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install XFCE Desktop, XRDP, dan kebutuhan lainnya
+# Install SSH dan dependensi utama
 RUN apt-get update && apt-get install -y \
-    xrdp \
-    xfce4 \
-    xfce4-goodies \
+    openssh-server \
     sudo \
-    && apt-get clean
+    curl \
+    wget \
+    nano \
+    net-tools \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Konfigurasi XRDP
-RUN adduser xrdp ssl-cert
-RUN echo "xfce4-session" > /etc/skel/.xsession
+# Buat direktori runtime SSH
+RUN mkdir -p /var/run/sshd
 
-# Buka port RDP
-EXPOSE 3389
+# Set password root (ganti 'passwordlu' dengan password yang diinginkan)
+RUN echo 'root:axly12341' | chpasswd
 
-# Start service
-CMD service xrdp start && tail -f /dev/null
+# Konfigurasi SSH agar menerima login password & root
+RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+    sed -i 's/UsePAM yes/UsePAM no/' /etc/ssh/sshd_config && \
+    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+
+EXPOSE 22
+
+# Jalankan SSH Daemon di foreground agar container tidak exit
+CMD ["/usr/sbin/sshd", "-D"]
