@@ -18,11 +18,11 @@ RUN apt-get update && apt-get install -y \
 
 # Setup SSH
 RUN mkdir -p /var/run/sshd
-RUN echo 'root:axly12341' | chpasswd
+RUN echo 'root:passwordlu' | chpasswd
 RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
 RUN sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
 EXPOSE 22
 
-# Start warp-svc di background, tunggu 5 detik, daftar, konek, baru nyalain SSH
+# Nyalain mesin WARP dulu (warp-svc), tunggu 5 detik, daftar, baru nyalain SSH
 CMD bash -c "warp-svc & sleep 5 && warp-cli --accept-tos registration new && warp-cli --accept-tos connect && /usr/sbin/sshd -D"
