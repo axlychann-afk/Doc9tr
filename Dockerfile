@@ -24,5 +24,5 @@ RUN sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/ss
 
 EXPOSE 22
 
-# Script otomatis connect WARP gratis pas VPS dinyalain
-CMD warp-cli --accept-tos registration new && warp-cli --accept-tos connect && /usr/sbin/sshd -D
+# Start warp-svc di background, tunggu 5 detik, daftar, konek, baru nyalain SSH
+CMD bash -c "warp-svc & sleep 5 && warp-cli --accept-tos registration new && warp-cli --accept-tos connect && /usr/sbin/sshd -D"
