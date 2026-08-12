@@ -2,29 +2,27 @@ FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install SSH dan dependensi utama
+# Install SSH, Curl, Wget, dan Cloudflare WARP
 RUN apt-get update && apt-get install -y \
     openssh-server \
     sudo \
     curl \
     wget \
-    nano \
-    net-tools \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    gnupg \
+    gpg \
+    lsb-release \
+    && curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ jammy main" | tee /etc/apt/sources.list.d/cloudflare-client.list \
+    && apt-get update && apt-get install -y cloudflare-warp \
+    && apt-get clean
 
-# Buat direktori runtime SSH
+# Setup SSH
 RUN mkdir -p /var/run/sshd
-
-# Set password root (ganti 'passwordlu' dengan password yang diinginkan)
 RUN echo 'root:axly12341' | chpasswd
-
-# Konfigurasi SSH agar menerima login password & root
-RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
-    sed -i 's/UsePAM yes/UsePAM no/' /etc/ssh/sshd_config && \
-    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+RUN sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
 EXPOSE 22
 
-# Jalankan SSH Daemon di foreground agar container tidak exit
-CMD ["/usr/sbin/sshd", "-D"]
+# Script otomatis connect WARP gratis pas VPS dinyalain
+CMD warp-cli --accept-tos registration new && warp-cli --accept-tos connect && /usr/sbin/sshd -D
